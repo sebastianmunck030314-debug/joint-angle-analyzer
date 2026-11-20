@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Led- & Vinkelmätare</title>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-panel: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+            --left-color: #3b82f6;
+            --right-color: #f97316;
+            --midline-color: #10b981;
+            --joint-color: #eab308;
+            --border: #334155;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            height: 100dvh;
+            overflow: hidden;
+        }
+
+        header {
+            background-color: var(--bg-panel);
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .title {
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        button, .file-label {
+            background-color: #334155;
+            color: var(--text-main);
+            border: 1px solid #475569;
+            padding: 6px 11px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        button:hover, .file-label:hover {
+            background-color: #475569;
+        }
+
+        button.active {
+            background-color: var(--accent);
+            color: #0f172a;
+            border-color: var(--accent);
+        }
+
+        button.danger {
+            background-color: #7f1d1d;
+            border-color: #991b1b;
+        }
+
+        button.danger:hover {
+            background-color: #991b1b;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .sub-toolbar {
+            background-color: #162032;
+            padding: 8px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            font-size: 0.82rem;
+        }
+
+        .status-text {
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        .workspace {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background-image: radial-gradient(#334155 1px, transparent 1px);
+            background-size: 20px 20px;
+            touch-action: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            display: block;
+            cursor: crosshair;
+        }
+
+        .placeholder-msg {
+            position: absolute;
+            text-align: center;
+            color: var(--text-muted);
+            pointer-events: none;
+            padding: 20px;
+        }
+
+        .placeholder-msg p {
+            margin-top: 8px;
+            font-size: 0.9rem;
+        }
+
+        .results-panel {
+            background-color: var(--bg-panel);
+            border-top: 1px solid var(--border);
+            padding: 10px 16px;
+            max-height: 165px;
+            overflow-y: auto;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 8px;
+        }
+
+        .result-card {
+            background-color: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+        }
+
+        .badge {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .angle-val {
+            font-size: 1.05rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .diff-card {
+            border-color: var(--accent);
+            background-color: rgba(56, 189, 248, 0.08);
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="title">📐 Biomekanisk Vinkelmätare</div>
+    <div class="toolbar">
+        <label class="file-label">
+            📷 Öppna bild
+            <input type="file" id="imageLoader" accept="image/*">
+        </label>
+        <button id="modeJoint" class="active" title="Klicka 3 punkter: Start -> Led -> Slut">3-Punkts Led</button>
+        <button id="modeMidline" title="Sätt en mittlinje och mät vinkel för vänster/höger ben mot den">Mittlinje & Asymmetri</button>
+        <button id="modePan" title="Dra för att flytta bilden, skrolla/nyp för zoom">🔍 Flytta / Zooma</button>
+    </div>
+</header>
+
+<div class="sub-toolbar">
+    <div id="statusText" class="status-text">Ladda upp en bild för att börja mäta.</div>
+    <div class="toolbar" id="subControls">
+        <button id="sideLeft" style="border-left: 4px solid var(--left-color);">Vänster (Blå)</button>
+        <button id="sideRight" style="border-left: 4px solid var(--right-color);">Höger (Orange)</button>
+        <button id="resetZoom">Återställ zoom</button>
+        <button id="undoBtn">Ångra senaste</button>
+        <button id="clearBtn" class="danger">Rensa allt</button>
+        <button id="exportBtn">💾 Spara bild</button>
+    </div>
+</div>
+
+<div class="workspace" id="workspace">
+    <div class="placeholder-msg" id="placeholder">
+        <h3>Ingen bild vald</h3>
+        <p>Klicka på <strong>"Öppna bild"</strong> uppe till vänster för att ladda in ett foto.</p>
+    </div>
+    <canvas id="canvas"></canvas>
+</div>
+
+<div class="results-panel">
+    <div class="results-grid" id="resultsGrid">
+        <div class="result-card" style="color: var(--text-muted);">
+            Inga vinklar uppmätta ännu.
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const workspace = document.getElementById('workspace');
+    const imageLoader = document.getElementById('imageLoader');
+    const statusText = document.getElementById('statusText');
+    const resultsGrid = document.getElementById('resultsGrid');
+    const placeholder = document.getElementById('placeholder');
+
+    let img = null;
+    let scale = 1;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    // Verktygslägen: 'joint' (3 punkter), 'midline' (mittlinje + ben), 'pan'
+    let mode = 'joint';
+    let currentSide = 'left'; // 'left' eller 'right'
+
+    // Datalagring
+    let jointAngles = []; // { id, side, points: [p1, p2, p3] }
+    let currentPoints = [];
+
+    let midline = null; // [p1, p2]
+    let midlineLegs = []; // { id, side, points: [p1, p2] }
+
+    // Interaktion
+    let draggingPoint = null;
+    let isPanning = false;
+    let startPanX = 0;
+    let startPanY = 0;
+    let initialPinchDist = null;
+    let initialScale = 1;
+
+    function resizeCanvas() {
+        canvas.width = workspace.clientWidth;
+        canvas.height = workspace.clientHeight;
+        draw();
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Ladda bild
+    imageLoader.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const loadedImg = new Image();
+            loadedImg.onload = () => {
+                img = loadedImg;
+                placeholder.style.display = 'none';
+                resetAllData();
+                fitImageToScreen();
+                updateStatus();
+            };
+            loadedImg.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+
+    function fitImageToScreen() {
+        if (!img) return;
+        const scaleX = (canvas.width * 0.92) / img.width;
+        const scaleY = (canvas.height * 0.92) / img.height;
+        scale = Math.min(scaleX, scaleY);
+        offsetX = (canvas.width - img.width * scale) / 2;
+        offsetY = (canvas.height - img.height * scale) / 2;
+        draw();
+    }
+
+    function resetAllData() {
+        jointAngles = [];
+        currentPoints = [];
+        midline = null;
+        midlineLegs = [];
+        updateResults();
+        draw();
+    }
+
+    // Lägesväljare
+    const modeBtns = {
+        joint: document.getElementById('modeJoint'),
+        midline: document.getElementById('modeMidline'),
+        pan: document.getElementById('modePan')
+    };
+
+    function setMode(newMode) {
+        mode = newMode;
+        currentPoints = [];
+        Object.values(modeBtns).forEach(b => b.classList.remove('active'));
+        modeBtns[newMode].classList.add('active');
+        canvas.style.cursor = newMode === 'pan' ? 'grab' : 'crosshair';
+        updateStatus();
+        draw();
+    }
+
+    modeBtns.joint.addEventListener('click', () => setMode('joint'));
+    modeBtns.midline.addEventListener('click', () => setMode('midline'));
+    modeBtns.pan.addEventListener('click', () => setMode('pan'));
+
+    document.getElementById('sideLeft').addEventListener('click', () => {
+        currentSide = 'left';
+        updateStatus();
+    });
+
+    document.getElementById('sideRight').addEventListener('click', () => {
+        currentSide = 'right';
+        updateStatus();
+    });
+
+    document.getElementById('resetZoom').addEventListener('click', fitImageToScreen);
+
+    document.getElementById('undoBtn').addEventListener('click', () => {
+        if (currentPoints.length > 0) {
+            currentPoints = [];
+        } else if (mode === 'joint' && jointAngles.length > 0) {
+            jointAngles.pop();
+        } else if (mode === 'midline') {
+            if (midlineLegs.length > 0) {
+                midlineLegs.pop();
+            } else if (midline) {
+                midline = null;
+            }
+        }
+        updateStatus();
+        updateResults();
+        draw();
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', resetAllData);
+
+    // Spara bild med ritade vinklar
+    document.getElementById('exportBtn').addEventListener('click', () => {
+        if (!img) return;
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = img.width;
+        tempCanvas.height = img.height;
+        const tCtx = tempCanvas.getContext('2d');
+
+        // Rita originalbild i full upplösning
+        tCtx.drawImage(img, 0, 0);
+
+        // Rita alla vektorer direkt på originalbildens koordinater
+        renderAnnotations(tCtx, 1);
+
+        const link = document.createElement('a');
+        link.download = `vinkelanalys-${new Date().toISOString().slice(0,10)}.png`;
+        link.href = tempCanvas.toDataURL('image/png');
+        link.click();
+    });
+
+    function updateStatus() {
+        if (!img) {
+            statusText.textContent = "Ladda upp en bild för att börja mäta.";
+            return;
+        }
+        const sideLabel = currentSide === 'left' ? 'Vänster (Blå)' : 'Höger (Orange)';
+        if (mode === 'pan') {
+            statusText.textContent = "Dra för att panorera. Skrolla eller nyp med två fingrar för att zooma.";
+        } else if (mode === 'joint') {
+            const step = currentPoints.length + 1;
+            const prompts = ["1/3: Klicka på första punkten (t.ex. höft)", "2/3: Klicka på ledpunkten (t.ex. knä)", "3/3: Klicka på slutpunkten (t.ex. fotled)"];
+            statusText.textContent = `[${sideLabel}] ${prompts[step - 1]} — Dra i punkter för att finjustera.`;
+        } else if (mode === 'midline') {
+            if (!midline) {
+                const step = currentPoints.length + 1;
+                statusText.textContent = step === 1
+                    ? "Steg 1: Klicka toppen av din mittlinje (t.ex. bröstben/ryggrad)."
+                    : "Steg 2: Klicka botten av din mittlinje (t.ex. bäckenets mittpunkt).";
+            } else {
+                const step = currentPoints.length + 1;
+                statusText.textContent = `[${sideLabel}] ${step === 1 ? "Klicka startpunkt på benet (höft)" : "Klicka slutpunkt på benet (knä)"} — Dra punkter för att justera.`;
+            }
+        }
+    }
+
+    // Koordinatkonvertering (Skärm <-> Bild)
+    function screenToImage(sx, sy) {
+        return {
+            x: (sx - offsetX) / scale,
+            y: (sy - offsetY) / scale
+        };
+    }
+
+    function imageToScreen(ix, iy) {
+        return {
+            x: ix * scale + offsetX,
+            y: iy * scale + offsetY
+        };
+    }
+
+    // Hitta punkt nära mus/finger för att kunna dra och justera
+    function findNearestPoint(sx, sy) {
+        const hitRadius = 18; // pixlar på skärmen
+        let allPoints = [];
+
+        jointAngles.forEach(j => j.points.forEach(p => allPoints.push(p)));
+        if (midline) midline.forEach(p => allPoints.push(p));
+        midlineLegs.forEach(l => l.points.forEach(p => allPoints.push(p)));
+        currentPoints.forEach(p => allPoints.push(p));
+
+        for (let p of allPoints) {
+            const sp = imageToScreen(p.x, p.y);
+            const dist = Math.hypot(sp.x - sx, sp.y - sy);
+            if (dist <= hitRadius) return p;
+        }
+        return null;
+    }
+
+    // Mus- och pekhändelser
+    function getPointerPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        if (e.touches && e.touches.length > 0) {
+            return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+        }
+        return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    }
+
+    canvas.addEventListener('mousedown', handlePointerDown);
+    canvas.addEventListener('mousemove', handlePointerMove);
+    window.addEventListener('mouseup', handlePointerUp);
+
+    canvas.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+            isPanning = false;
+            draggingPoint = null;
+            initialPinchDist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            initialScale = scale;
+            return;
+        }
+        handlePointerDown(e);
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (e.touches.length === 2 && initialPinchDist) {
+            const currentDist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            const rect = canvas.getBoundingClientRect();
+            const midX = ((e.touches[0].clientX + e.touches[1].clientX) / 2) - rect.left;
+            const midY = ((e.touches[0].clientY + e.touches[1].clientY) / 2) - rect.top;
+
+            const newScale = Math.min(Math.max(initialScale * (currentDist / initialPinchDist), 0.1), 15);
+            offsetX = midX - (midX - offsetX) * (newScale / scale);
+            offsetY = midY - (midY - offsetY) * (newScale / scale);
+            scale = newScale;
+            draw();
+            return;
+        }
+        handlePointerMove(e);
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', () => {
+        initialPinchDist = null;
+        handlePointerUp();
+    });
+
+    // Zoom med mushjul
+    canvas.addEventListener('wheel', (e) => {
+        if (!img) return;
+        e.preventDefault();
+        const pos = getPointerPos(e);
+        const zoomFactor = e.deltaY < 0 ? 1.12 : 0.89;
+        const newScale = Math.min(Math.max(scale * zoomFactor, 0.1), 15);
+
+        offsetX = pos.x - (pos.x - offsetX) * (newScale / scale);
+        offsetY = pos.y - (pos.y - offsetY) * (newScale / scale);
+        scale = newScale;
+        draw();
+    }, { passive: false });
+
+    function handlePointerDown(e) {
+        if (!img) return;
+        const pos = getPointerPos(e);
+
+        // Kontrollera om användaren tar tag i en befintlig punkt
+        const hit = findNearestPoint(pos.x, pos.y);
+        if (hit) {
+            draggingPoint = hit;
+            return;
+        }
+
+        if (mode === 'pan') {
+            isPanning = true;
+            startPanX = pos.x - offsetX;
+            startPanY = pos.y - offsetY;
+            canvas.style.cursor = 'grabbing';
+            return;
+        }
+
+        // Lägg till ny mätpunkt
+        const imgPt = screenToImage(pos.x, pos.y);
+        currentPoints.push(imgPt);
+
+        if (mode === 'joint' && currentPoints.length === 3) {
+            jointAngles.push({
+                id: Date.now(),
+                side: currentSide,
+                points: [...currentPoints]
+            });
+            currentPoints = [];
+            updateResults();
+        } else if (mode === 'midline') {
+            if (!midline && currentPoints.length === 2) {
+                midline = [...currentPoints];
+                currentPoints = [];
+                updateResults();
+            } else if (midline && currentPoints.length === 2) {
+                midlineLegs.push({
+                    id: Date.now(),
+                    side: currentSide,
+                    points: [...currentPoints]
+                });
+                currentPoints = [];
+                updateResults();
+            }
+        }
+
+        updateStatus();
+        draw();
+    }
+
+    function handlePointerMove(e) {
+        if (!img) return;
+        const pos = getPointerPos(e);
+
+        if (draggingPoint) {
+            const imgPt = screenToImage(pos.x, pos.y);
+            draggingPoint.x = imgPt.x;
+            draggingPoint.y = imgPt.y;
+            updateResults();
+            draw();
+            return;
+        }
+
+        if (isPanning) {
+            offsetX = pos.x - startPanX;
+            offsetY = pos.y - startPanY;
+            draw();
+        }
+    }
+
+    function handlePointerUp() {
+        draggingPoint = null;
+        if (isPanning) {
+            isPanning = false;
+            canvas.style.cursor = 'grab';
+        }
+    }
+
+    // Matematik för vinklar
+    function calculateThreePointAngle(p1, p2, p3) {
+        const v1 = { x: p1.x - p2.x, y: p1.y - p2.y };
+        const v2 = { x: p3.x - p2.x, y: p3.y - p2.y };
+        const dot = v1.x * v2.x + v1.y * v2.y;
+        const mag1 = Math.hypot(v1.x, v1.y);
+        const mag2 = Math.hypot(v2.x, v2.y);
+        if (mag1 === 0 || mag2 === 0) return 0;
+        const cosAngle = Math.min(Math.max(dot / (mag1 * mag2), -1), 1);
+        return (Math.acos(cosAngle) * 180) / Math.PI;
+    }
+
+    function calculateAngleBetweenLines(line1, line2) {
+        const v1 = { x: line1[1].x - line1[0].x, y: line1[1].y - line1[0].y };
+        const v2 = { x: line2[1].x - line2[0].x, y: line2[1].y - line2[0].y };
+        const dot = v1.x * v2.x + v1.y * v2.y;
+        const mag1 = Math.hypot(v1.x, v1.y);
+        const mag2 = Math.hypot(v2.x, v2.y);
+        if (mag1 === 0 || mag2 === 0) return 0;
+        // Beräkna spetsig/trubbig vinkel mellan vektorerna (0 - 180 grader)
+        const cosAngle = Math.min(Math.max(dot / (mag1 * mag2), -1), 1);
+        let deg = (Math.acos(cosAngle) * 180) / Math.PI;
+        return deg > 90 ? 180 - deg : deg;
+    }
+
+    // Rendering
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (!img) return;
+
+        ctx.save();
+        ctx.translate(offsetX, offsetY);
+        ctx.scale(scale, scale);
+        ctx.drawImage(img, 0, 0);
+        renderAnnotations(ctx, scale);
+        ctx.restore();
+    }
+
+    function renderAnnotations(context, currentScale) {
+        const lineWidth = Math.max(2.5 / currentScale, 1.5);
+        const pointRadius = Math.max(6 / currentScale, 3.5);
+        const fontSize = Math.max(15 / currentScale, 11);
+
+        // Rita 3-punkts vinklar
+        jointAngles.forEach(item => {
+            const color = item.side === 'left' ? '#3b82f6' : '#f97316';
+            const [p1, p2, p3] = item.points;
+            const angle = calculateThreePointAngle(p1, p2, p3);
+
+            drawLine(context, p1, p2, color, lineWidth);
+            drawLine(context, p2, p3, color, lineWidth);
+
+            drawPoint(context, p1, color, pointRadius);
+            drawPoint(context, p2, '#eab308', pointRadius * 1.15);
+            drawPoint(context, p3, color, pointRadius);
+
+            drawLabel(context, `${angle.toFixed(1)}°`, p2.x + 12 / currentScale, p2.y - 12 / currentScale, color, fontSize);
+        });
+
+        // Rita Mittlinje
+        if (midline) {
+            drawLine(context, midline[0], midline[1], '#10b981', lineWidth, true);
+            drawPoint(context, midline[0], '#10b981', pointRadius);
+            drawPoint(context, midline[1], '#10b981', pointRadius);
+            drawLabel(context, "Mittlinje", midline[0].x + 10 / currentScale, midline[0].y, '#10b981', fontSize * 0.85);
+        }
+
+        // Rita benlinjer relativt mittlinjen
+        midlineLegs.forEach(leg => {
+            const color = leg.side === 'left' ? '#3b82f6' : '#f97316';
+            const [p1, p2] = leg.points;
+            drawLine(context, p1, p2, color, lineWidth);
+            drawPoint(context, p1, color, pointRadius);
+            drawPoint(context, p2, color, pointRadius);
+
+            if (midline) {
+                const angle = calculateAngleBetweenLines(midline, leg.points);
+                const midX = (p1.x + p2.x) / 2;
+                const midY = (p1.y + p2.y) / 2;
+                drawLabel(context, `${angle.toFixed(1)}°`, midX + 10 / currentScale, midY, color, fontSize);
+            }
+        });
+
+        // Rita pågående punkter
+        if (currentPoints.length > 0) {
+            const activeColor = (mode === 'midline' && !midline) ? '#10b981' : (currentSide === 'left' ? '#3b82f6' : '#f97316');
+            currentPoints.forEach((p, idx) => {
+                drawPoint(context, p, activeColor, pointRadius);
+                if (idx > 0) {
+                    drawLine(context, currentPoints[idx - 1], p, activeColor, lineWidth);
+                }
+            });
+        }
+    }
+
+    function drawLine(context, p1, p2, color, width, dashed = false) {
+        context.save();
+        context.beginPath();
+        if (dashed) context.setLineDash([width * 3, width * 2]);
+        context.moveTo(p1.x, p1.y);
+        context.lineTo(p2.x, p2.y);
+        context.strokeStyle = color;
+        context.lineWidth = width;
+        context.lineCap = 'round';
+        context.stroke();
+        context.restore();
+    }
+
+    function drawPoint(context, p, color, radius) {
+        context.save();
+        context.beginPath();
+        context.arc(p.x, p.y, radius, 0, Math.PI * 2);
+        context.fillStyle = color;
+        context.fill();
+        context.lineWidth = radius * 0.35;
+        context.strokeStyle = '#ffffff';
+        context.stroke();
+        context.restore();
+    }
+
+    function drawLabel(context, text, x, y, bgColor, fontSize) {
+        context.save();
+        context.font = `bold ${fontSize}px -apple-system, sans-serif`;
+        const metrics = context.measureText(text);
+        const padX = fontSize * 0.45;
+        const padY = fontSize * 0.3;
+        const boxW = metrics.width + padX * 2;
+        const boxH = fontSize + padY * 2;
+
+        context.fillStyle = 'rgba(15, 23, 42, 0.85)';
+        context.beginPath();
+        context.roundRect(x, y - boxH + padY, boxW, boxH, fontSize * 0.3);
+        context.fill();
+
+        context.strokeStyle = bgColor;
+        context.lineWidth = Math.max(fontSize * 0.1, 1);
+        context.stroke();
+
+        context.fillStyle = '#ffffff';
+        context.fillText(text, x + padX, y);
+        context.restore();
+    }
+
+    // Uppdatera resultattabellen längst ner
+    function updateResults() {
+        let html = '';
+        let leftAngles = [];
+        let rightAngles = [];
+
+        jointAngles.forEach((item, idx) => {
+            const angle = calculateThreePointAngle(item.points[0], item.points[1], item.points[2]);
+            const isLeft = item.side === 'left';
+            if (isLeft) leftAngles.push(angle);
+            else rightAngles.push(angle);
+
+            html += `
+                <div class="result-card">
+                    <div>
+                        <span class="badge" style="background:${isLeft ? 'var(--left-color)' : 'var(--right-color)'}"></span>
+                        ${isLeft ? 'Vänster' : 'Höger'} led #${idx + 1}
+                    </div>
+                    <div class="angle-val">${angle.toFixed(1)}°</div>
+                </div>
+            `;
+        });
+
+        if (midline) {
+            midlineLegs.forEach((leg, idx) => {
+                const angle = calculateAngleBetweenLines(midline, leg.points);
+                const isLeft = leg.side === 'left';
+                if (isLeft) leftAngles.push(angle);
+                else rightAngles.push(angle);
+
+                html += `
+                    <div class="result-card">
+                        <div>
+                            <span class="badge" style="background:${isLeft ? 'var(--left-color)' : 'var(--right-color)'}"></span>
+                            ${isLeft ? 'Vänster' : 'Höger'} mot mittlinje #${idx + 1}
+                        </div>
+                        <div class="angle-val">${angle.toFixed(1)}°</div>
+                    </div>
+                `;
+            });
+        }
+
+        // Beräkna asymmetri om både vänster och höger finns uppmätta
+        if (leftAngles.length > 0 && rightAngles.length > 0) {
+            const latestLeft = leftAngles[leftAngles.length - 1];
+            const latestRight = rightAngles[rightAngles.length - 1];
+            const diff = Math.abs(latestLeft - latestRight);
+            const dominant = latestLeft > latestRight ? 'Vänster större' : (latestRight > latestLeft ? 'Höger större' : 'Identiska');
+
+            html += `
+                <div class="result-card diff-card">
+                    <div><strong>Δ Skillnad (V vs H)</strong><br><small style="color:var(--text-muted)">${dominant}</small></div>
+                    <div class="angle-val" style="color:var(--accent)">${diff.toFixed(1)}°</div>
+                </div>
+            `;
+        }
+
+        resultsGrid.innerHTML = html || `<div class="result-card" style="color: var(--text-muted);">Inga vinklar uppmätta ännu.</div>`;
+    }
+</script>
+</body>
+</html>

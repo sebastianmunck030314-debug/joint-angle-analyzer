@@ -248,7 +248,7 @@
             .toolbar > button, .toolbar > .file-label {
                 flex: 1 1 auto;
                 padding: 7px 6px;
-                font-size: 0.79rem;
+                font-size: 0.78rem;
             }
         }
     </style>
@@ -281,6 +281,8 @@
     <div class="toolbar" id="subControls">
         <button id="sideLeft" class="side-active" style="border-left: 5px solid var(--left-color);">Vänster (Blå)</button>
         <button id="sideRight" style="border-left: 5px solid var(--right-color);">Höger (Orange)</button>
+        <button id="rotateLeftBtn" title="Rotera aktiv bild 90° moturs">↺ 90°</button>
+        <button id="rotateRightBtn" title="Rotera aktiv bild 90° medurs">↻ 90°</button>
         <button id="resetZoom">Helbild</button>
         <button id="undoBtn">Ångra</button>
         <button id="clearBtn" class="danger">Rensa</button>
@@ -317,7 +319,6 @@
     const resultsGrid = document.getElementById('resultsGrid');
     const placeholder = document.getElementById('placeholder');
 
-    // Skapar ett komplett dataobjekt för varje bildpanel (A eller B)
     function createSlot(id, label) {
         return {
             id,
@@ -342,7 +343,6 @@
     let mode = 'joint';
     let currentSide = 'left';
 
-    // Interaktionsvariabler
     let draggingPoint = null;
     let draggingSlotIdx = 0;
     let isTouchDrag = false;
@@ -382,7 +382,6 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // Växla mellan 1-bildsläge och 2-bilders jämförelseläge
     toggleCompareBtn.addEventListener('click', () => {
         compareMode = !compareMode;
         if (compareMode) {
@@ -504,6 +503,19 @@
         updateStatus();
     });
 
+    // Snabb 90-graders rotering av den aktiva bilden (fungerar på både dator och mobil)
+    function rotateActiveSlot(deltaDeg) {
+        const slot = slots[activeSlotIdx];
+        if (!slot || !slot.img) return;
+        slot.rotationRad += (deltaDeg * Math.PI) / 180;
+        slot.levelLine = null;
+        fitImageToScreen(activeSlotIdx);
+        updateStatus();
+    }
+
+    document.getElementById('rotateLeftBtn').addEventListener('click', () => rotateActiveSlot(-90));
+    document.getElementById('rotateRightBtn').addEventListener('click', () => rotateActiveSlot(90));
+
     document.getElementById('resetZoom').addEventListener('click', () => {
         fitImageToScreen(0);
         if (compareMode) fitImageToScreen(1);
@@ -536,7 +548,6 @@
         resetSlotData(1);
     });
 
-    // Export av en bild eller två bilder bredvid varandra
     document.getElementById('exportBtn').addEventListener('click', () => {
         if (!slots[0].img && !slots[1].img) return;
 
@@ -627,7 +638,7 @@
                     ? `${slotPrefix}Vattenpass 1/2: Tryck på vänster ände av en vågrät linje (t.ex. golvet).`
                     : `${slotPrefix}Vattenpass 2/2: Tryck på höger ände av linjen för att räta upp.`;
             } else {
-                statusText.textContent = `${slotPrefix}Upprätad (${deg}°). Dra i de lila punkterna för att finjustera.`;
+                statusText.textContent = `${slotPrefix}Upprätad (${deg}°). Dra i siktespunkterna för att finjustera.`;
             }
         } else if (mode === 'pan') {
             statusText.textContent = `${slotPrefix}Dra med ett finger för att flytta, nyp med två fingrar för att zooma.`;
@@ -681,7 +692,7 @@
     function findNearestPointInSlot(sx, sy, slotIdx, isTouch) {
         const slot = slots[slotIdx];
         if (!slot.img) return null;
-        const hitRadius = isTouch ? 36 : 22;
+        const hitRadius = isTouch ? 32 : 18;
         let allPoints = [];
 
         if (slot.levelLine) slot.levelLine.forEach(p => allPoints.push(p));
@@ -748,7 +759,7 @@
             const midX = ((e.touches[0].clientX + e.touches[1].clientX) / 2) - rect.left;
             const midY = ((e.touches[0].clientY + e.touches[1].clientY) / 2) - rect.top;
 
-            const newScale = Math.min(Math.max(initialScale * (currentDist / initialPinchDist), 0.1), 15);
+            const newScale = Math.min(Math.max(initialScale * (currentDist / initialPinchDist), 0.1), 25);
             slot.offsetX = midX - (midX - slot.offsetX) * (newScale / slot.scale);
             slot.offsetY = midY - (midY - slot.offsetY) * (newScale / slot.scale);
             slot.scale = newScale;
@@ -771,8 +782,8 @@
         if (!slot.img) return;
 
         activeSlotIdx = sIdx;
-        const zoomFactor = e.deltaY < 0 ? 1.12 : 0.89;
-        const newScale = Math.min(Math.max(slot.scale * zoomFactor, 0.1), 15);
+        const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
+        const newScale = Math.min(Math.max(slot.scale * zoomFactor, 0.1), 25);
 
         slot.offsetX = pos.x - (pos.x - slot.offsetX) * (newScale / slot.scale);
         slot.offsetY = pos.y - (pos.y - slot.offsetY) * (newScale / slot.scale);
@@ -955,9 +966,9 @@
         if (!slot.img) return;
 
         const screenPt = imageToScreen(draggingPoint.x, draggingPoint.y, draggingSlotIdx);
-        const radius = Math.min(canvas.width, canvas.height) < 500 ? 60 : 76;
+        const radius = Math.min(canvas.width, canvas.height) < 500 ? 64 : 82;
         const margin = 14;
-        const zoomMultiplier = 3.0;
+        const zoomMultiplier = 4.5;
         const magScale = slot.scale * zoomMultiplier;
 
         const isNearTopLeft = screenPt.x < (radius * 2 + margin * 2) && screenPt.y < (radius * 2 + margin * 2);
@@ -965,8 +976,8 @@
         const centerY = radius + margin;
 
         ctx.save();
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.65)';
-        ctx.shadowBlur = 14;
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
+        ctx.shadowBlur = 16;
         ctx.shadowOffsetY = 4;
 
         ctx.beginPath();
@@ -991,21 +1002,21 @@
         ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
         ctx.clip();
 
-        ctx.strokeStyle = 'rgba(56, 189, 248, 0.85)';
-        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.9)';
+        ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(centerX - radius, centerY);
-        ctx.lineTo(centerX - 10, centerY);
-        ctx.moveTo(centerX + 10, centerY);
+        ctx.lineTo(centerX - 6, centerY);
+        ctx.moveTo(centerX + 6, centerY);
         ctx.lineTo(centerX + radius, centerY);
         ctx.moveTo(centerX, centerY - radius);
-        ctx.lineTo(centerX, centerY - 10);
-        ctx.moveTo(centerX, centerY + 10);
+        ctx.lineTo(centerX, centerY - 6);
+        ctx.moveTo(centerX, centerY + 6);
         ctx.lineTo(centerX, centerY + radius);
         ctx.stroke();
 
         ctx.beginPath();
-        ctx.arc(centerX, centerY, 2.5, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, 1.5, 0, Math.PI * 2);
         ctx.fillStyle = '#38bdf8';
         ctx.fill();
         ctx.restore();
@@ -1013,7 +1024,7 @@
         ctx.save();
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 2.5;
         ctx.strokeStyle = '#38bdf8';
         ctx.stroke();
         ctx.restore();
@@ -1051,7 +1062,6 @@
             ctx.fillText(`Tryck på "📷 Bild ${slot.label}" högst upp`, vp.x + vp.w / 2, vp.y + vp.h / 2 + 12);
         }
 
-        // Etikett i hörnet för Bild A / Bild B i jämförelseläget
         if (compareMode) {
             const isSelected = activeSlotIdx === slotIdx;
             const badgeX = vp.x + 10;
@@ -1077,7 +1087,6 @@
         if (compareMode) {
             drawSlot(1);
 
-            // Vertikal skiljelinje mellan Bild A och Bild B
             ctx.save();
             ctx.beginPath();
             ctx.moveTo(canvas.width / 2, 0);
@@ -1091,10 +1100,46 @@
         drawMagnifier();
     }
 
+    function drawAngleArcAndLabel(context, p1, p2, p3, angleDeg, color, lineWidth, fontSize, currentScale, rotRad) {
+        const a1 = Math.atan2(p1.y - p2.y, p1.x - p2.x);
+        const a2 = Math.atan2(p3.y - p2.y, p3.x - p2.x);
+
+        let diff = a2 - a1;
+        while (diff <= -Math.PI) diff += Math.PI * 2;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+
+        const len1 = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+        const len2 = Math.hypot(p3.x - p2.x, p3.y - p2.y);
+        const minArm = Math.min(len1, len2);
+        const arcRadius = Math.min(28 / currentScale, minArm * 0.45);
+
+        if (arcRadius > 2 / currentScale) {
+            context.save();
+            context.beginPath();
+            context.arc(p2.x, p2.y, arcRadius, a1, a1 + diff, diff < 0);
+            context.strokeStyle = color;
+            context.lineWidth = lineWidth * 0.9;
+            context.stroke();
+
+            context.lineTo(p2.x, p2.y);
+            context.closePath();
+            context.fillStyle = color === '#3b82f6' ? 'rgba(59, 130, 246, 0.18)' : 'rgba(249, 115, 22, 0.18)';
+            context.fill();
+            context.restore();
+        }
+
+        const bisector = a1 + diff / 2;
+        const labelDist = Math.max(arcRadius + 16 / currentScale, 26 / currentScale);
+        const lx = p2.x + Math.cos(bisector) * labelDist;
+        const ly = p2.y + Math.sin(bisector) * labelDist;
+
+        drawLabel(context, `${angleDeg.toFixed(1)}°`, lx, ly, color, fontSize, rotRad, true);
+    }
+
     function renderAnnotations(context, slot, currentScale, isExport = false, isMagnifier = false) {
-        const lineWidth = Math.max(3 / currentScale, isMagnifier ? 1 : 2);
-        const pointRadius = isMagnifier ? Math.max(4 / currentScale, 2) : Math.max(9 / currentScale, 5);
-        const fontSize = Math.max(16 / currentScale, 12);
+        const lineWidth = isMagnifier ? Math.max(1 / currentScale, 0.5) : Math.max(1.75 / currentScale, 1.1);
+        const pointRadius = isMagnifier ? Math.max(5 / currentScale, 2.5) : Math.max(6.5 / currentScale, 4);
+        const fontSize = Math.max(14 / currentScale, 11);
 
         if (slot.levelLine && !isExport) {
             drawLine(context, slot.levelLine[0], slot.levelLine[1], '#a855f7', lineWidth, true);
@@ -1104,7 +1149,7 @@
                 const deg = ((slot.rotationRad * 180) / Math.PI).toFixed(1);
                 const midX = (slot.levelLine[0].x + slot.levelLine[1].x) / 2;
                 const midY = (slot.levelLine[0].y + slot.levelLine[1].y) / 2;
-                drawLabel(context, `Horisont (${deg}°)`, midX, midY - 14 / currentScale, '#a855f7', fontSize * 0.85, slot.rotationRad);
+                drawLabel(context, `Horisont (${deg}°)`, midX, midY - 14 / currentScale, '#a855f7', fontSize * 0.85, slot.rotationRad, true);
             }
         }
 
@@ -1116,13 +1161,13 @@
             drawLine(context, p1, p2, color, lineWidth);
             drawLine(context, p2, p3, color, lineWidth);
 
-            drawPoint(context, p1, color, pointRadius, p1 === draggingPoint, isMagnifier);
-            drawPoint(context, p2, '#eab308', pointRadius * 1.15, p2 === draggingPoint, isMagnifier);
-            drawPoint(context, p3, color, pointRadius, p3 === draggingPoint, isMagnifier);
-
             if (!isMagnifier) {
-                drawLabel(context, `${angle.toFixed(1)}°`, p2.x + 14 / currentScale, p2.y - 14 / currentScale, color, fontSize, slot.rotationRad);
+                drawAngleArcAndLabel(context, p1, p2, p3, angle, color, lineWidth, fontSize, currentScale, slot.rotationRad);
             }
+
+            drawPoint(context, p1, color, pointRadius, p1 === draggingPoint, isMagnifier);
+            drawPoint(context, p2, '#eab308', pointRadius * 1.1, p2 === draggingPoint, isMagnifier);
+            drawPoint(context, p3, color, pointRadius, p3 === draggingPoint, isMagnifier);
         });
 
         if (slot.midline) {
@@ -1130,7 +1175,7 @@
             drawPoint(context, slot.midline[0], '#10b981', pointRadius, slot.midline[0] === draggingPoint, isMagnifier);
             drawPoint(context, slot.midline[1], '#10b981', pointRadius, slot.midline[1] === draggingPoint, isMagnifier);
             if (!isMagnifier) {
-                drawLabel(context, "Mittlinje", slot.midline[0].x + 12 / currentScale, slot.midline[0].y, '#10b981', fontSize * 0.85, slot.rotationRad);
+                drawLabel(context, "Mittlinje", slot.midline[0].x + 10 / currentScale, slot.midline[0].y - 8 / currentScale, '#10b981', fontSize * 0.85, slot.rotationRad, false);
             }
         }
 
@@ -1145,7 +1190,7 @@
                 const angle = calculateAngleBetweenLines(slot.midline, leg.points);
                 const midX = (p1.x + p2.x) / 2;
                 const midY = (p1.y + p2.y) / 2;
-                drawLabel(context, `${angle.toFixed(1)}°`, midX + 12 / currentScale, midY, color, fontSize, slot.rotationRad);
+                drawLabel(context, `${angle.toFixed(1)}°`, midX + 12 / currentScale, midY, color, fontSize, slot.rotationRad, false);
             }
         });
 
@@ -1166,7 +1211,7 @@
     function drawLine(context, p1, p2, color, width, dashed = false) {
         context.save();
         context.beginPath();
-        if (dashed) context.setLineDash([width * 3, width * 2]);
+        if (dashed) context.setLineDash([width * 3.5, width * 2.5]);
         context.moveTo(p1.x, p1.y);
         context.lineTo(p2.x, p2.y);
         context.strokeStyle = color;
@@ -1178,46 +1223,73 @@
 
     function drawPoint(context, p, color, radius, isDragging = false, isMagnifier = false) {
         context.save();
+
+        const ringRadius = isDragging ? radius * 1.45 : radius;
+        const strokeW = Math.max(ringRadius * 0.24, 0.8);
+
+        context.beginPath();
+        context.arc(p.x, p.y, ringRadius, 0, Math.PI * 2);
+        context.strokeStyle = 'rgba(15, 23, 42, 0.85)';
+        context.lineWidth = strokeW * 1.9;
+        context.stroke();
+
+        context.beginPath();
+        context.arc(p.x, p.y, ringRadius, 0, Math.PI * 2);
+        context.strokeStyle = isDragging ? '#38bdf8' : color;
+        context.lineWidth = strokeW;
+        context.stroke();
+
+        const innerGap = ringRadius * 0.45;
+        const outerTick = ringRadius * 1.3;
+        context.beginPath();
+        context.moveTo(p.x - outerTick, p.y);
+        context.lineTo(p.x - innerGap, p.y);
+        context.moveTo(p.x + innerGap, p.y);
+        context.lineTo(p.x + outerTick, p.y);
+        context.moveTo(p.x, p.y - outerTick);
+        context.lineTo(p.x, p.y - innerGap);
+        context.moveTo(p.x, p.y + innerGap);
+        context.lineTo(p.x, p.y + outerTick);
+        context.strokeStyle = '#ffffff';
+        context.lineWidth = Math.max(strokeW * 0.65, 0.6);
+        context.stroke();
+
         if (!isMagnifier) {
             context.beginPath();
-            context.arc(p.x, p.y, isDragging ? radius * 2.4 : radius * 1.7, 0, Math.PI * 2);
-            context.fillStyle = isDragging ? 'rgba(56, 189, 248, 0.35)' : 'rgba(255, 255, 255, 0.18)';
+            context.arc(p.x, p.y, Math.max(ringRadius * 0.16, 0.8), 0, Math.PI * 2);
+            context.fillStyle = '#ffffff';
             context.fill();
         }
 
-        context.beginPath();
-        context.arc(p.x, p.y, radius, 0, Math.PI * 2);
-        context.fillStyle = isMagnifier && isDragging ? 'rgba(56, 189, 248, 0.4)' : color;
-        context.fill();
-        context.lineWidth = radius * 0.3;
-        context.strokeStyle = '#ffffff';
-        context.stroke();
         context.restore();
     }
 
-    function drawLabel(context, text, x, y, bgColor, fontSize, rotRad = 0) {
+    function drawLabel(context, text, x, y, bgColor, fontSize, rotRad = 0, centered = false) {
         context.save();
         context.translate(x, y);
         context.rotate(-rotRad);
 
         context.font = `bold ${fontSize}px -apple-system, sans-serif`;
         const metrics = context.measureText(text);
-        const padX = fontSize * 0.45;
-        const padY = fontSize * 0.3;
+        const padX = fontSize * 0.4;
+        const padY = fontSize * 0.25;
         const boxW = metrics.width + padX * 2;
         const boxH = fontSize + padY * 2;
 
+        const offsetX = centered ? -boxW / 2 : 0;
+        const offsetY = centered ? boxH / 2 - padY : 0;
+
         context.fillStyle = 'rgba(15, 23, 42, 0.88)';
         context.beginPath();
-        context.roundRect(0, -boxH + padY, boxW, boxH, fontSize * 0.3);
+        context.roundRect(offsetX, offsetY - boxH + padY, boxW, boxH, fontSize * 0.28);
         context.fill();
 
         context.strokeStyle = bgColor;
-        context.lineWidth = Math.max(fontSize * 0.1, 1);
+        context.lineWidth = Math.max(fontSize * 0.09, 1);
         context.stroke();
 
         context.fillStyle = '#ffffff';
-        context.fillText(text, padX, 0);
+        context.fillText(text, offsetX + padX, offsetY);
         context.restore();
     }
 
@@ -1271,7 +1343,6 @@
             }
         });
 
-        // Jämförelse mellan Bild A och Bild B i jämförelseläget
         if (compareMode && slotAngles[0].length > 0 && slotAngles[1].length > 0) {
             const valA = slotAngles[0][slotAngles[0].length - 1];
             const valB = slotAngles[1][slotAngles[1].length - 1];
@@ -1285,7 +1356,6 @@
             `;
         }
 
-        // Jämförelse mellan Vänster och Höger sida
         if (leftAngles.length > 0 && rightAngles.length > 0) {
             const latestLeft = leftAngles[leftAngles.length - 1];
             const latestRight = rightAngles[rightAngles.length - 1];

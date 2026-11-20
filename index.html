@@ -14,6 +14,7 @@
             --left-color: #3b82f6;
             --right-color: #f97316;
             --midline-color: #10b981;
+            --level-color: #a855f7;
             --joint-color: #eab308;
             --border: #334155;
         }
@@ -33,26 +34,33 @@
             flex-direction: column;
             height: 100dvh;
             overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         header {
             background-color: var(--bg-panel);
-            padding: 10px 16px;
+            padding: 8px 12px;
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .title-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             flex-wrap: wrap;
         }
 
         .title {
-            font-size: 1rem;
+            font-size: 0.98rem;
             font-weight: 700;
             letter-spacing: 0.3px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            margin-right: 4px;
         }
 
         .toolbar {
@@ -66,15 +74,21 @@
             background-color: #334155;
             color: var(--text-main);
             border: 1px solid #475569;
-            padding: 6px 11px;
-            border-radius: 6px;
-            font-size: 0.82rem;
+            min-height: 40px;
+            padding: 7px 11px;
+            border-radius: 8px;
+            font-size: 0.83rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.15s ease;
+            transition: transform 0.1s ease, background-color 0.15s ease;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 5px;
+        }
+
+        button:active, .file-label:active {
+            transform: scale(0.96);
         }
 
         button:hover, .file-label:hover {
@@ -85,6 +99,24 @@
             background-color: var(--accent);
             color: #0f172a;
             border-color: var(--accent);
+        }
+
+        button.active-level {
+            background-color: var(--level-color);
+            color: #ffffff;
+            border-color: var(--level-color);
+        }
+
+        button.active-compare {
+            background-color: #0284c7;
+            color: #ffffff;
+            border-color: #38bdf8;
+        }
+
+        button.side-active {
+            outline: 2px solid #ffffff;
+            outline-offset: -2px;
+            background-color: #475569;
         }
 
         button.danger {
@@ -102,19 +134,18 @@
 
         .sub-toolbar {
             background-color: #162032;
-            padding: 8px 16px;
+            padding: 8px 12px;
             border-bottom: 1px solid var(--border);
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            font-size: 0.82rem;
+            flex-direction: column;
+            gap: 7px;
         }
 
         .status-text {
             color: var(--accent);
-            font-weight: 500;
+            font-weight: 600;
+            font-size: 0.83rem;
+            line-height: 1.3;
         }
 
         .workspace {
@@ -144,32 +175,32 @@
 
         .placeholder-msg p {
             margin-top: 8px;
-            font-size: 0.9rem;
+            font-size: 0.92rem;
         }
 
         .results-panel {
             background-color: var(--bg-panel);
             border-top: 1px solid var(--border);
-            padding: 10px 16px;
-            max-height: 165px;
+            padding: 8px 12px;
+            max-height: 150px;
             overflow-y: auto;
         }
 
         .results-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
             gap: 8px;
         }
 
         .result-card {
             background-color: var(--bg-dark);
             border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 8px 12px;
+            border-radius: 8px;
+            padding: 8px 11px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.85rem;
+            font-size: 0.84rem;
         }
 
         .badge {
@@ -177,7 +208,18 @@
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            margin-right: 6px;
+            margin-right: 5px;
+        }
+
+        .slot-tag {
+            display: inline-block;
+            background-color: #334155;
+            color: #e2e8f0;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 1px 5px;
+            border-radius: 4px;
+            margin-right: 4px;
         }
 
         .angle-val {
@@ -188,41 +230,68 @@
 
         .diff-card {
             border-color: var(--accent);
-            background-color: rgba(56, 189, 248, 0.08);
+            background-color: rgba(56, 189, 248, 0.1);
+        }
+
+        @media (max-width: 700px) {
+            header {
+                padding: 7px 10px;
+            }
+            .title-row {
+                width: 100%;
+                justify-content: space-between;
+            }
+            .toolbar {
+                width: 100%;
+                justify-content: space-between;
+            }
+            .toolbar > button, .toolbar > .file-label {
+                flex: 1 1 auto;
+                padding: 7px 6px;
+                font-size: 0.79rem;
+            }
         }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="title">📐 Biomekanisk Vinkelmätare</div>
-    <div class="toolbar">
-        <label class="file-label">
-            📷 Öppna bild
-            <input type="file" id="imageLoader" accept="image/*">
+    <div class="title-row">
+        <span class="title">📐 Vinkelmätare</span>
+        <label class="file-label" style="min-height: 36px; padding: 5px 10px;">
+            📷 <span id="labelImgA">Öppna bild</span>
+            <input type="file" id="imageLoaderA" accept="image/*">
         </label>
+        <label class="file-label" id="uploadBtnB" style="display: none; min-height: 36px; padding: 5px 10px; border-color: var(--accent);">
+            📷 Bild B
+            <input type="file" id="imageLoaderB" accept="image/*">
+        </label>
+        <button id="toggleCompareBtn" style="min-height: 36px; padding: 5px 10px;" title="Visa två bilder bredvid varandra">👯 Jämför 2</button>
+    </div>
+    <div class="toolbar">
+        <button id="modeLevel" title="Dra en linje längs golvet för att räta upp bilden">⚖️ Vattenpass</button>
         <button id="modeJoint" class="active" title="Klicka 3 punkter: Start -> Led -> Slut">3-Punkts Led</button>
-        <button id="modeMidline" title="Sätt en mittlinje och mät vinkel för vänster/höger ben mot den">Mittlinje & Asymmetri</button>
-        <button id="modePan" title="Dra för att flytta bilden, skrolla/nyp för zoom">🔍 Flytta / Zooma</button>
+        <button id="modeMidline" title="Sätt en mittlinje och mät vinkel för vänster/höger ben mot den">Mittlinje</button>
+        <button id="modePan" title="Dra för att flytta bilden, skrolla/nyp för zoom">🔍 Zoom</button>
     </div>
 </header>
 
 <div class="sub-toolbar">
-    <div id="statusText" class="status-text">Ladda upp en bild för att börja mäta.</div>
+    <div id="statusText" class="status-text">Öppna en bild för att börja mäta.</div>
     <div class="toolbar" id="subControls">
-        <button id="sideLeft" style="border-left: 4px solid var(--left-color);">Vänster (Blå)</button>
-        <button id="sideRight" style="border-left: 4px solid var(--right-color);">Höger (Orange)</button>
-        <button id="resetZoom">Återställ zoom</button>
-        <button id="undoBtn">Ångra senaste</button>
-        <button id="clearBtn" class="danger">Rensa allt</button>
-        <button id="exportBtn">💾 Spara bild</button>
+        <button id="sideLeft" class="side-active" style="border-left: 5px solid var(--left-color);">Vänster (Blå)</button>
+        <button id="sideRight" style="border-left: 5px solid var(--right-color);">Höger (Orange)</button>
+        <button id="resetZoom">Helbild</button>
+        <button id="undoBtn">Ångra</button>
+        <button id="clearBtn" class="danger">Rensa</button>
+        <button id="exportBtn">💾 Spara</button>
     </div>
 </div>
 
 <div class="workspace" id="workspace">
     <div class="placeholder-msg" id="placeholder">
         <h3>Ingen bild vald</h3>
-        <p>Klicka på <strong>"Öppna bild"</strong> uppe till vänster för att ladda in ett foto.</p>
+        <p>Tryck på <strong>"📷 Öppna bild"</strong> högst upp för att ladda in ett foto.</p>
     </div>
     <canvas id="canvas"></canvas>
 </div>
@@ -239,34 +308,71 @@
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     const workspace = document.getElementById('workspace');
-    const imageLoader = document.getElementById('imageLoader');
+    const imageLoaderA = document.getElementById('imageLoaderA');
+    const imageLoaderB = document.getElementById('imageLoaderB');
+    const uploadBtnB = document.getElementById('uploadBtnB');
+    const labelImgA = document.getElementById('labelImgA');
+    const toggleCompareBtn = document.getElementById('toggleCompareBtn');
     const statusText = document.getElementById('statusText');
     const resultsGrid = document.getElementById('resultsGrid');
     const placeholder = document.getElementById('placeholder');
 
-    let img = null;
-    let scale = 1;
-    let offsetX = 0;
-    let offsetY = 0;
+    // Skapar ett komplett dataobjekt för varje bildpanel (A eller B)
+    function createSlot(id, label) {
+        return {
+            id,
+            label,
+            img: null,
+            scale: 1,
+            offsetX: 0,
+            offsetY: 0,
+            rotationRad: 0,
+            levelLine: null,
+            jointAngles: [],
+            currentPoints: [],
+            midline: null,
+            midlineLegs: []
+        };
+    }
 
-    // Verktygslägen: 'joint' (3 punkter), 'midline' (mittlinje + ben), 'pan'
+    const slots = [createSlot(0, 'A'), createSlot(1, 'B')];
+    let compareMode = false;
+    let activeSlotIdx = 0;
+
     let mode = 'joint';
-    let currentSide = 'left'; // 'left' eller 'right'
+    let currentSide = 'left';
 
-    // Datalagring
-    let jointAngles = []; // { id, side, points: [p1, p2, p3] }
-    let currentPoints = [];
-
-    let midline = null; // [p1, p2]
-    let midlineLegs = []; // { id, side, points: [p1, p2] }
-
-    // Interaktion
+    // Interaktionsvariabler
     let draggingPoint = null;
+    let draggingSlotIdx = 0;
+    let isTouchDrag = false;
     let isPanning = false;
+    let panningSlotIdx = 0;
     let startPanX = 0;
     let startPanY = 0;
     let initialPinchDist = null;
     let initialScale = 1;
+    let pinchSlotIdx = 0;
+
+    const TOUCH_LIFT_PX = 42;
+
+    function getViewport(slotIdx) {
+        if (!compareMode) {
+            return { x: 0, y: 0, w: canvas.width, h: canvas.height };
+        }
+        const halfW = canvas.width / 2;
+        return {
+            x: slotIdx === 0 ? 0 : halfW,
+            y: 0,
+            w: halfW,
+            h: canvas.height
+        };
+    }
+
+    function getSlotAtScreenX(sx) {
+        if (!compareMode) return 0;
+        return sx < canvas.width / 2 ? 0 : 1;
+    }
 
     function resizeCanvas() {
         canvas.width = workspace.clientWidth;
@@ -276,46 +382,84 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // Ladda bild
-    imageLoader.addEventListener('change', (e) => {
-        const file = e.target.files[0];
+    // Växla mellan 1-bildsläge och 2-bilders jämförelseläge
+    toggleCompareBtn.addEventListener('click', () => {
+        compareMode = !compareMode;
+        if (compareMode) {
+            toggleCompareBtn.classList.add('active-compare');
+            toggleCompareBtn.textContent = '👯 Jämför (På)';
+            uploadBtnB.style.display = 'inline-flex';
+            labelImgA.textContent = 'Bild A';
+        } else {
+            toggleCompareBtn.classList.remove('active-compare');
+            toggleCompareBtn.textContent = '👯 Jämför 2';
+            uploadBtnB.style.display = 'none';
+            labelImgA.textContent = 'Öppna bild';
+            activeSlotIdx = 0;
+        }
+        slots.forEach((_, idx) => {
+            slots[idx].currentPoints = [];
+            fitImageToScreen(idx);
+        });
+        updateStatus();
+        updateResults();
+        draw();
+    });
+
+    function loadImageIntoSlot(file, slotIdx) {
         if (!file) return;
         const reader = new FileReader();
         reader.onload = (event) => {
             const loadedImg = new Image();
             loadedImg.onload = () => {
-                img = loadedImg;
+                const slot = slots[slotIdx];
+                slot.img = loadedImg;
                 placeholder.style.display = 'none';
-                resetAllData();
-                fitImageToScreen();
+                resetSlotData(slotIdx);
+                fitImageToScreen(slotIdx);
+                activeSlotIdx = slotIdx;
                 updateStatus();
             };
             loadedImg.src = event.target.result;
         };
         reader.readAsDataURL(file);
-    });
+    }
 
-    function fitImageToScreen() {
-        if (!img) return;
-        const scaleX = (canvas.width * 0.92) / img.width;
-        const scaleY = (canvas.height * 0.92) / img.height;
-        scale = Math.min(scaleX, scaleY);
-        offsetX = (canvas.width - img.width * scale) / 2;
-        offsetY = (canvas.height - img.height * scale) / 2;
+    imageLoaderA.addEventListener('change', (e) => loadImageIntoSlot(e.target.files[0], 0));
+    imageLoaderB.addEventListener('change', (e) => loadImageIntoSlot(e.target.files[0], 1));
+
+    function fitImageToScreen(slotIdx) {
+        const slot = slots[slotIdx];
+        if (!slot.img) return;
+        const vp = getViewport(slotIdx);
+
+        const cos = Math.abs(Math.cos(slot.rotationRad));
+        const sin = Math.abs(Math.sin(slot.rotationRad));
+        const rotW = slot.img.width * cos + slot.img.height * sin;
+        const rotH = slot.img.width * sin + slot.img.height * cos;
+
+        const scaleX = (vp.w * 0.92) / rotW;
+        const scaleY = (vp.h * 0.92) / rotH;
+        slot.scale = Math.min(scaleX, scaleY);
+        slot.offsetX = vp.x + vp.w / 2;
+        slot.offsetY = vp.y + vp.h / 2;
         draw();
     }
 
-    function resetAllData() {
-        jointAngles = [];
-        currentPoints = [];
-        midline = null;
-        midlineLegs = [];
+    function resetSlotData(slotIdx) {
+        const slot = slots[slotIdx];
+        slot.rotationRad = 0;
+        slot.levelLine = null;
+        slot.jointAngles = [];
+        slot.currentPoints = [];
+        slot.midline = null;
+        slot.midlineLegs = [];
         updateResults();
         draw();
     }
 
-    // Lägesväljare
     const modeBtns = {
+        level: document.getElementById('modeLevel'),
         joint: document.getElementById('modeJoint'),
         midline: document.getElementById('modeMidline'),
         pan: document.getElementById('modePan')
@@ -323,40 +467,63 @@
 
     function setMode(newMode) {
         mode = newMode;
-        currentPoints = [];
-        Object.values(modeBtns).forEach(b => b.classList.remove('active'));
-        modeBtns[newMode].classList.add('active');
+        slots.forEach(s => s.currentPoints = []);
+        Object.values(modeBtns).forEach(b => {
+            b.classList.remove('active');
+            b.classList.remove('active-level');
+        });
+        if (newMode === 'level') {
+            modeBtns.level.classList.add('active-level');
+        } else {
+            modeBtns[newMode].classList.add('active');
+        }
         canvas.style.cursor = newMode === 'pan' ? 'grab' : 'crosshair';
         updateStatus();
         draw();
     }
 
+    modeBtns.level.addEventListener('click', () => setMode('level'));
     modeBtns.joint.addEventListener('click', () => setMode('joint'));
     modeBtns.midline.addEventListener('click', () => setMode('midline'));
     modeBtns.pan.addEventListener('click', () => setMode('pan'));
 
-    document.getElementById('sideLeft').addEventListener('click', () => {
+    const sideLeftBtn = document.getElementById('sideLeft');
+    const sideRightBtn = document.getElementById('sideRight');
+
+    sideLeftBtn.addEventListener('click', () => {
         currentSide = 'left';
+        sideLeftBtn.classList.add('side-active');
+        sideRightBtn.classList.remove('side-active');
         updateStatus();
     });
 
-    document.getElementById('sideRight').addEventListener('click', () => {
+    sideRightBtn.addEventListener('click', () => {
         currentSide = 'right';
+        sideRightBtn.classList.add('side-active');
+        sideLeftBtn.classList.remove('side-active');
         updateStatus();
     });
 
-    document.getElementById('resetZoom').addEventListener('click', fitImageToScreen);
+    document.getElementById('resetZoom').addEventListener('click', () => {
+        fitImageToScreen(0);
+        if (compareMode) fitImageToScreen(1);
+    });
 
     document.getElementById('undoBtn').addEventListener('click', () => {
-        if (currentPoints.length > 0) {
-            currentPoints = [];
-        } else if (mode === 'joint' && jointAngles.length > 0) {
-            jointAngles.pop();
+        const slot = slots[activeSlotIdx];
+        if (!slot) return;
+        if (slot.currentPoints.length > 0) {
+            slot.currentPoints = [];
+        } else if (mode === 'level' && slot.levelLine) {
+            slot.levelLine = null;
+            slot.rotationRad = 0;
+        } else if (mode === 'joint' && slot.jointAngles.length > 0) {
+            slot.jointAngles.pop();
         } else if (mode === 'midline') {
-            if (midlineLegs.length > 0) {
-                midlineLegs.pop();
-            } else if (midline) {
-                midline = null;
+            if (slot.midlineLegs.length > 0) {
+                slot.midlineLegs.pop();
+            } else if (slot.midline) {
+                slot.midline = null;
             }
         }
         updateStatus();
@@ -364,87 +531,179 @@
         draw();
     });
 
-    document.getElementById('clearBtn').addEventListener('click', resetAllData);
+    document.getElementById('clearBtn').addEventListener('click', () => {
+        resetSlotData(0);
+        resetSlotData(1);
+    });
 
-    // Spara bild med ritade vinklar
+    // Export av en bild eller två bilder bredvid varandra
     document.getElementById('exportBtn').addEventListener('click', () => {
-        if (!img) return;
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = img.width;
-        tempCanvas.height = img.height;
-        const tCtx = tempCanvas.getContext('2d');
+        if (!slots[0].img && !slots[1].img) return;
 
-        // Rita originalbild i full upplösning
-        tCtx.drawImage(img, 0, 0);
+        function renderSlotToOffscreen(slot) {
+            if (!slot.img) return null;
+            const cos = Math.abs(Math.cos(slot.rotationRad));
+            const sin = Math.abs(Math.sin(slot.rotationRad));
+            const outW = Math.round(slot.img.width * cos + slot.img.height * sin);
+            const outH = Math.round(slot.img.width * sin + slot.img.height * cos);
 
-        // Rita alla vektorer direkt på originalbildens koordinater
-        renderAnnotations(tCtx, 1);
+            const c = document.createElement('canvas');
+            c.width = outW;
+            c.height = outH;
+            const cCtx = c.getContext('2d');
 
+            cCtx.fillStyle = '#0f172a';
+            cCtx.fillRect(0, 0, outW, outH);
+
+            cCtx.save();
+            cCtx.translate(outW / 2, outH / 2);
+            cCtx.rotate(slot.rotationRad);
+            cCtx.translate(-slot.img.width / 2, -slot.img.height / 2);
+
+            cCtx.drawImage(slot.img, 0, 0);
+            renderAnnotations(cCtx, slot, 1, true, false);
+            cCtx.restore();
+            return c;
+        }
+
+        const canvasA = renderSlotToOffscreen(slots[0]);
+        const canvasB = compareMode ? renderSlotToOffscreen(slots[1]) : null;
+
+        let finalCanvas;
+        if (canvasA && canvasB) {
+            const targetH = Math.max(canvasA.height, canvasB.height);
+            const wA = Math.round(canvasA.width * (targetH / canvasA.height));
+            const wB = Math.round(canvasB.width * (targetH / canvasB.height));
+            const gap = 12;
+
+            finalCanvas = document.createElement('canvas');
+            finalCanvas.width = wA + wB + gap;
+            finalCanvas.height = targetH;
+            const fCtx = finalCanvas.getContext('2d');
+
+            fCtx.fillStyle = '#0f172a';
+            fCtx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+            fCtx.drawImage(canvasA, 0, 0, wA, targetH);
+            fCtx.drawImage(canvasB, wA + gap, 0, wB, targetH);
+        } else {
+            finalCanvas = canvasA || canvasB;
+        }
+
+        if (!finalCanvas) return;
         const link = document.createElement('a');
         link.download = `vinkelanalys-${new Date().toISOString().slice(0,10)}.png`;
-        link.href = tempCanvas.toDataURL('image/png');
+        link.href = finalCanvas.toDataURL('image/png');
         link.click();
     });
 
+    function applyLevelRotation(slot) {
+        if (!slot.levelLine || slot.levelLine.length < 2) return;
+        const [p1, p2] = slot.levelLine;
+        const leftPt = p1.x <= p2.x ? p1 : p2;
+        const rightPt = p1.x <= p2.x ? p2 : p1;
+        const angle = Math.atan2(rightPt.y - leftPt.y, rightPt.x - leftPt.x);
+        slot.rotationRad = -angle;
+    }
+
     function updateStatus() {
-        if (!img) {
-            statusText.textContent = "Ladda upp en bild för att börja mäta.";
+        const slot = slots[activeSlotIdx];
+        const slotPrefix = compareMode ? `[Bild ${slot.label}] ` : '';
+
+        if (!slots[0].img && !slots[1].img) {
+            statusText.textContent = "Öppna en bild för att börja mäta.";
             return;
         }
+        if (!slot.img) {
+            statusText.textContent = `${slotPrefix}Ingen bild laddad här ännu. Tryck på "📷 Bild ${slot.label}" högst upp.`;
+            return;
+        }
+
         const sideLabel = currentSide === 'left' ? 'Vänster (Blå)' : 'Höger (Orange)';
-        if (mode === 'pan') {
-            statusText.textContent = "Dra för att panorera. Skrolla eller nyp med två fingrar för att zooma.";
-        } else if (mode === 'joint') {
-            const step = currentPoints.length + 1;
-            const prompts = ["1/3: Klicka på första punkten (t.ex. höft)", "2/3: Klicka på ledpunkten (t.ex. knä)", "3/3: Klicka på slutpunkten (t.ex. fotled)"];
-            statusText.textContent = `[${sideLabel}] ${prompts[step - 1]} — Dra i punkter för att finjustera.`;
-        } else if (mode === 'midline') {
-            if (!midline) {
-                const step = currentPoints.length + 1;
+        if (mode === 'level') {
+            const deg = ((slot.rotationRad * 180) / Math.PI).toFixed(1);
+            if (!slot.levelLine) {
+                const step = slot.currentPoints.length + 1;
                 statusText.textContent = step === 1
-                    ? "Steg 1: Klicka toppen av din mittlinje (t.ex. bröstben/ryggrad)."
-                    : "Steg 2: Klicka botten av din mittlinje (t.ex. bäckenets mittpunkt).";
+                    ? `${slotPrefix}Vattenpass 1/2: Tryck på vänster ände av en vågrät linje (t.ex. golvet).`
+                    : `${slotPrefix}Vattenpass 2/2: Tryck på höger ände av linjen för att räta upp.`;
             } else {
-                const step = currentPoints.length + 1;
-                statusText.textContent = `[${sideLabel}] ${step === 1 ? "Klicka startpunkt på benet (höft)" : "Klicka slutpunkt på benet (knä)"} — Dra punkter för att justera.`;
+                statusText.textContent = `${slotPrefix}Upprätad (${deg}°). Dra i de lila punkterna för att finjustera.`;
+            }
+        } else if (mode === 'pan') {
+            statusText.textContent = `${slotPrefix}Dra med ett finger för att flytta, nyp med två fingrar för att zooma.`;
+        } else if (mode === 'joint') {
+            const step = slot.currentPoints.length + 1;
+            const prompts = [
+                "1/3: Tryck på startpunkt (t.ex. höft)",
+                "2/3: Tryck på ledpunkt (t.ex. knä)",
+                "3/3: Tryck på slutpunkt (t.ex. fotled)"
+            ];
+            statusText.textContent = `${slotPrefix}[${sideLabel}] ${prompts[step - 1]} • Dra punkt för att finjustera.`;
+        } else if (mode === 'midline') {
+            if (!slot.midline) {
+                const step = slot.currentPoints.length + 1;
+                statusText.textContent = step === 1
+                    ? `${slotPrefix}Steg 1/2: Tryck toppen av mittlinjen (t.ex. bröstben).`
+                    : `${slotPrefix}Steg 2/2: Tryck botten av mittlinjen (t.ex. bäcken).`;
+            } else {
+                const step = slot.currentPoints.length + 1;
+                statusText.textContent = `${slotPrefix}[${sideLabel}] ${step === 1 ? "1/2: Startpunkt på benet (höft)" : "2/2: Slutpunkt på benet (knä)"}.`;
             }
         }
     }
 
-    // Koordinatkonvertering (Skärm <-> Bild)
-    function screenToImage(sx, sy) {
+    function screenToImage(sx, sy, slotIdx) {
+        const slot = slots[slotIdx];
+        if (!slot.img) return { x: 0, y: 0 };
+        const dx = (sx - slot.offsetX) / slot.scale;
+        const dy = (sy - slot.offsetY) / slot.scale;
+        const cos = Math.cos(-slot.rotationRad);
+        const sin = Math.sin(-slot.rotationRad);
         return {
-            x: (sx - offsetX) / scale,
-            y: (sy - offsetY) / scale
+            x: dx * cos - dy * sin + slot.img.width / 2,
+            y: dx * sin + dy * cos + slot.img.height / 2
         };
     }
 
-    function imageToScreen(ix, iy) {
+    function imageToScreen(ix, iy, slotIdx) {
+        const slot = slots[slotIdx];
+        if (!slot.img) return { x: 0, y: 0 };
+        const cx = ix - slot.img.width / 2;
+        const cy = iy - slot.img.height / 2;
+        const cos = Math.cos(slot.rotationRad);
+        const sin = Math.sin(slot.rotationRad);
         return {
-            x: ix * scale + offsetX,
-            y: iy * scale + offsetY
+            x: (cx * cos - cy * sin) * slot.scale + slot.offsetX,
+            y: (cx * sin + cy * cos) * slot.scale + slot.offsetY
         };
     }
 
-    // Hitta punkt nära mus/finger för att kunna dra och justera
-    function findNearestPoint(sx, sy) {
-        const hitRadius = 18; // pixlar på skärmen
+    function findNearestPointInSlot(sx, sy, slotIdx, isTouch) {
+        const slot = slots[slotIdx];
+        if (!slot.img) return null;
+        const hitRadius = isTouch ? 36 : 22;
         let allPoints = [];
 
-        jointAngles.forEach(j => j.points.forEach(p => allPoints.push(p)));
-        if (midline) midline.forEach(p => allPoints.push(p));
-        midlineLegs.forEach(l => l.points.forEach(p => allPoints.push(p)));
-        currentPoints.forEach(p => allPoints.push(p));
+        if (slot.levelLine) slot.levelLine.forEach(p => allPoints.push(p));
+        slot.jointAngles.forEach(j => j.points.forEach(p => allPoints.push(p)));
+        if (slot.midline) slot.midline.forEach(p => allPoints.push(p));
+        slot.midlineLegs.forEach(l => l.points.forEach(p => allPoints.push(p)));
+        slot.currentPoints.forEach(p => allPoints.push(p));
+
+        let closestPoint = null;
+        let minDist = hitRadius;
 
         for (let p of allPoints) {
-            const sp = imageToScreen(p.x, p.y);
+            const sp = imageToScreen(p.x, p.y, slotIdx);
             const dist = Math.hypot(sp.x - sx, sp.y - sy);
-            if (dist <= hitRadius) return p;
+            if (dist <= minDist) {
+                minDist = dist;
+                closestPoint = p;
+            }
         }
-        return null;
+        return closestPoint;
     }
 
-    // Mus- och pekhändelser
     function getPointerPos(e) {
         const rect = canvas.getBoundingClientRect();
         if (e.touches && e.touches.length > 0) {
@@ -453,27 +712,34 @@
         return { x: e.clientX - rect.left, y: e.clientY - rect.top };
     }
 
-    canvas.addEventListener('mousedown', handlePointerDown);
-    canvas.addEventListener('mousemove', handlePointerMove);
+    canvas.addEventListener('mousedown', (e) => handlePointerDown(e, false));
+    canvas.addEventListener('mousemove', (e) => handlePointerMove(e, false));
     window.addEventListener('mouseup', handlePointerUp);
 
     canvas.addEventListener('touchstart', (e) => {
         if (e.touches.length === 2) {
             isPanning = false;
             draggingPoint = null;
+            const rect = canvas.getBoundingClientRect();
+            const midX = ((e.touches[0].clientX + e.touches[1].clientX) / 2) - rect.left;
+            pinchSlotIdx = getSlotAtScreenX(midX);
+            activeSlotIdx = pinchSlotIdx;
+
             initialPinchDist = Math.hypot(
                 e.touches[0].clientX - e.touches[1].clientX,
                 e.touches[0].clientY - e.touches[1].clientY
             );
-            initialScale = scale;
+            initialScale = slots[pinchSlotIdx].scale;
             return;
         }
-        handlePointerDown(e);
+        handlePointerDown(e, true);
     }, { passive: false });
 
     canvas.addEventListener('touchmove', (e) => {
         e.preventDefault();
         if (e.touches.length === 2 && initialPinchDist) {
+            const slot = slots[pinchSlotIdx];
+            if (!slot.img) return;
             const currentDist = Math.hypot(
                 e.touches[0].clientX - e.touches[1].clientX,
                 e.touches[0].clientY - e.touches[1].clientY
@@ -483,13 +749,13 @@
             const midY = ((e.touches[0].clientY + e.touches[1].clientY) / 2) - rect.top;
 
             const newScale = Math.min(Math.max(initialScale * (currentDist / initialPinchDist), 0.1), 15);
-            offsetX = midX - (midX - offsetX) * (newScale / scale);
-            offsetY = midY - (midY - offsetY) * (newScale / scale);
-            scale = newScale;
+            slot.offsetX = midX - (midX - slot.offsetX) * (newScale / slot.scale);
+            slot.offsetY = midY - (midY - slot.offsetY) * (newScale / slot.scale);
+            slot.scale = newScale;
             draw();
             return;
         }
-        handlePointerMove(e);
+        handlePointerMove(e, true);
     }, { passive: false });
 
     canvas.addEventListener('touchend', () => {
@@ -497,63 +763,86 @@
         handlePointerUp();
     });
 
-    // Zoom med mushjul
     canvas.addEventListener('wheel', (e) => {
-        if (!img) return;
         e.preventDefault();
         const pos = getPointerPos(e);
-        const zoomFactor = e.deltaY < 0 ? 1.12 : 0.89;
-        const newScale = Math.min(Math.max(scale * zoomFactor, 0.1), 15);
+        const sIdx = getSlotAtScreenX(pos.x);
+        const slot = slots[sIdx];
+        if (!slot.img) return;
 
-        offsetX = pos.x - (pos.x - offsetX) * (newScale / scale);
-        offsetY = pos.y - (pos.y - offsetY) * (newScale / scale);
-        scale = newScale;
+        activeSlotIdx = sIdx;
+        const zoomFactor = e.deltaY < 0 ? 1.12 : 0.89;
+        const newScale = Math.min(Math.max(slot.scale * zoomFactor, 0.1), 15);
+
+        slot.offsetX = pos.x - (pos.x - slot.offsetX) * (newScale / slot.scale);
+        slot.offsetY = pos.y - (pos.y - slot.offsetY) * (newScale / slot.scale);
+        slot.scale = newScale;
+        updateStatus();
         draw();
     }, { passive: false });
 
-    function handlePointerDown(e) {
-        if (!img) return;
+    function handlePointerDown(e, isTouch) {
         const pos = getPointerPos(e);
+        const sIdx = getSlotAtScreenX(pos.x);
+        activeSlotIdx = sIdx;
+        const slot = slots[sIdx];
 
-        // Kontrollera om användaren tar tag i en befintlig punkt
-        const hit = findNearestPoint(pos.x, pos.y);
+        if (!slot.img) {
+            updateStatus();
+            draw();
+            return;
+        }
+
+        const hit = findNearestPointInSlot(pos.x, pos.y, sIdx, isTouch);
         if (hit) {
             draggingPoint = hit;
+            draggingSlotIdx = sIdx;
+            isTouchDrag = isTouch;
+            updateStatus();
+            draw();
             return;
         }
 
         if (mode === 'pan') {
             isPanning = true;
-            startPanX = pos.x - offsetX;
-            startPanY = pos.y - offsetY;
+            panningSlotIdx = sIdx;
+            startPanX = pos.x - slot.offsetX;
+            startPanY = pos.y - slot.offsetY;
             canvas.style.cursor = 'grabbing';
+            updateStatus();
+            draw();
             return;
         }
 
-        // Lägg till ny mätpunkt
-        const imgPt = screenToImage(pos.x, pos.y);
-        currentPoints.push(imgPt);
+        const imgPt = screenToImage(pos.x, pos.y, sIdx);
+        slot.currentPoints.push(imgPt);
 
-        if (mode === 'joint' && currentPoints.length === 3) {
-            jointAngles.push({
+        if (mode === 'level' && slot.currentPoints.length === 2) {
+            slot.levelLine = [...slot.currentPoints];
+            slot.currentPoints = [];
+            applyLevelRotation(slot);
+            fitImageToScreen(sIdx);
+            updateResults();
+        } else if (mode === 'joint' && slot.currentPoints.length === 3) {
+            slot.jointAngles.push({
                 id: Date.now(),
                 side: currentSide,
-                points: [...currentPoints]
+                points: [...slot.currentPoints]
             });
-            currentPoints = [];
+            slot.currentPoints = [];
             updateResults();
         } else if (mode === 'midline') {
-            if (!midline && currentPoints.length === 2) {
-                midline = [...currentPoints];
-                currentPoints = [];
+            if (!slot.midline && slot.currentPoints.length === 2) {
+                slot.midline = [...slot.currentPoints];
+                slot.currentPoints = [];
                 updateResults();
-            } else if (midline && currentPoints.length === 2) {
-                midlineLegs.push({
+            } else if (slot.midline && slot.currentPoints.length === 2) {
+                slot.midlineLegs.push({
                     id: Date.now(),
                     side: currentSide,
-                    points: [...currentPoints]
+                    points: [...slot.currentPoints]
                 });
-                currentPoints = [];
+                slot.currentPoints = [];
                 updateResults();
             }
         }
@@ -562,35 +851,46 @@
         draw();
     }
 
-    function handlePointerMove(e) {
-        if (!img) return;
+    function handlePointerMove(e, isTouch) {
         const pos = getPointerPos(e);
 
         if (draggingPoint) {
-            const imgPt = screenToImage(pos.x, pos.y);
+            const slot = slots[draggingSlotIdx];
+            const targetY = isTouch ? (pos.y - TOUCH_LIFT_PX) : pos.y;
+            const imgPt = screenToImage(pos.x, targetY, draggingSlotIdx);
             draggingPoint.x = imgPt.x;
             draggingPoint.y = imgPt.y;
+
+            if (slot.levelLine && (draggingPoint === slot.levelLine[0] || draggingPoint === slot.levelLine[1])) {
+                applyLevelRotation(slot);
+                updateStatus();
+            }
+
             updateResults();
             draw();
             return;
         }
 
         if (isPanning) {
-            offsetX = pos.x - startPanX;
-            offsetY = pos.y - startPanY;
+            const slot = slots[panningSlotIdx];
+            slot.offsetX = pos.x - startPanX;
+            slot.offsetY = pos.y - startPanY;
             draw();
         }
     }
 
     function handlePointerUp() {
-        draggingPoint = null;
+        if (draggingPoint) {
+            draggingPoint = null;
+            isTouchDrag = false;
+            draw();
+        }
         if (isPanning) {
             isPanning = false;
             canvas.style.cursor = 'grab';
         }
     }
 
-    // Matematik för vinklar
     function calculateThreePointAngle(p1, p2, p3) {
         const v1 = { x: p1.x - p2.x, y: p1.y - p2.y };
         const v2 = { x: p3.x - p2.x, y: p3.y - p2.y };
@@ -609,32 +909,206 @@
         const mag1 = Math.hypot(v1.x, v1.y);
         const mag2 = Math.hypot(v2.x, v2.y);
         if (mag1 === 0 || mag2 === 0) return 0;
-        // Beräkna spetsig/trubbig vinkel mellan vektorerna (0 - 180 grader)
         const cosAngle = Math.min(Math.max(dot / (mag1 * mag2), -1), 1);
         let deg = (Math.acos(cosAngle) * 180) / Math.PI;
         return deg > 90 ? 180 - deg : deg;
     }
 
-    // Rendering
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        if (!img) return;
-
+    function drawReferenceGrid(vp) {
         ctx.save();
-        ctx.translate(offsetX, offsetY);
-        ctx.scale(scale, scale);
-        ctx.drawImage(img, 0, 0);
-        renderAnnotations(ctx, scale);
+        ctx.beginPath();
+        ctx.rect(vp.x, vp.y, vp.w, vp.h);
+        ctx.clip();
+
+        const step = 45;
+        ctx.strokeStyle = 'rgba(168, 85, 247, 0.25)';
+        ctx.lineWidth = 1;
+
+        for (let x = vp.x; x < vp.x + vp.w; x += step) {
+            ctx.beginPath();
+            ctx.moveTo(x, vp.y);
+            ctx.lineTo(x, vp.y + vp.h);
+            ctx.stroke();
+        }
+        for (let y = vp.y; y < vp.y + vp.h; y += step) {
+            ctx.beginPath();
+            ctx.moveTo(vp.x, y);
+            ctx.lineTo(vp.x + vp.w, y);
+            ctx.stroke();
+        }
+
+        ctx.strokeStyle = 'rgba(168, 85, 247, 0.65)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([6, 6]);
+        ctx.beginPath();
+        ctx.moveTo(vp.x, vp.y + vp.h / 2);
+        ctx.lineTo(vp.x + vp.w, vp.y + vp.h / 2);
+        ctx.moveTo(vp.x + vp.w / 2, vp.y);
+        ctx.lineTo(vp.x + vp.w / 2, vp.y + vp.h);
+        ctx.stroke();
         ctx.restore();
     }
 
-    function renderAnnotations(context, currentScale) {
-        const lineWidth = Math.max(2.5 / currentScale, 1.5);
-        const pointRadius = Math.max(6 / currentScale, 3.5);
-        const fontSize = Math.max(15 / currentScale, 11);
+    function drawMagnifier() {
+        if (!draggingPoint) return;
+        const slot = slots[draggingSlotIdx];
+        if (!slot.img) return;
 
-        // Rita 3-punkts vinklar
-        jointAngles.forEach(item => {
+        const screenPt = imageToScreen(draggingPoint.x, draggingPoint.y, draggingSlotIdx);
+        const radius = Math.min(canvas.width, canvas.height) < 500 ? 60 : 76;
+        const margin = 14;
+        const zoomMultiplier = 3.0;
+        const magScale = slot.scale * zoomMultiplier;
+
+        const isNearTopLeft = screenPt.x < (radius * 2 + margin * 2) && screenPt.y < (radius * 2 + margin * 2);
+        const centerX = isNearTopLeft ? (canvas.width - radius - margin) : (radius + margin);
+        const centerY = radius + margin;
+
+        ctx.save();
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.65)';
+        ctx.shadowBlur = 14;
+        ctx.shadowOffsetY = 4;
+
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#0f172a';
+        ctx.fill();
+        ctx.clip();
+
+        ctx.shadowColor = 'transparent';
+
+        ctx.translate(centerX, centerY);
+        ctx.scale(magScale, magScale);
+        ctx.rotate(slot.rotationRad);
+        ctx.translate(-draggingPoint.x, -draggingPoint.y);
+
+        ctx.drawImage(slot.img, 0, 0);
+        renderAnnotations(ctx, slot, magScale, false, true);
+        ctx.restore();
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.clip();
+
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.85)';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(centerX - radius, centerY);
+        ctx.lineTo(centerX - 10, centerY);
+        ctx.moveTo(centerX + 10, centerY);
+        ctx.lineTo(centerX + radius, centerY);
+        ctx.moveTo(centerX, centerY - radius);
+        ctx.lineTo(centerX, centerY - 10);
+        ctx.moveTo(centerX, centerY + 10);
+        ctx.lineTo(centerX, centerY + radius);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#38bdf8';
+        ctx.fill();
+        ctx.restore();
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#38bdf8';
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    function drawSlot(slotIdx) {
+        const slot = slots[slotIdx];
+        const vp = getViewport(slotIdx);
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(vp.x, vp.y, vp.w, vp.h);
+        ctx.clip();
+
+        if (slot.img) {
+            ctx.save();
+            ctx.translate(slot.offsetX, slot.offsetY);
+            ctx.scale(slot.scale, slot.scale);
+            ctx.rotate(slot.rotationRad);
+            ctx.translate(-slot.img.width / 2, -slot.img.height / 2);
+
+            ctx.drawImage(slot.img, 0, 0);
+            renderAnnotations(ctx, slot, slot.scale, false, false);
+            ctx.restore();
+
+            if (mode === 'level') {
+                drawReferenceGrid(vp);
+            }
+        } else if (compareMode) {
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '600 14px -apple-system, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(`Bild ${slot.label} saknas`, vp.x + vp.w / 2, vp.y + vp.h / 2 - 10);
+            ctx.font = '12px -apple-system, sans-serif';
+            ctx.fillText(`Tryck på "📷 Bild ${slot.label}" högst upp`, vp.x + vp.w / 2, vp.y + vp.h / 2 + 12);
+        }
+
+        // Etikett i hörnet för Bild A / Bild B i jämförelseläget
+        if (compareMode) {
+            const isSelected = activeSlotIdx === slotIdx;
+            const badgeX = vp.x + 10;
+            const badgeY = vp.y + 10;
+            ctx.fillStyle = isSelected ? '#38bdf8' : 'rgba(15, 23, 42, 0.8)';
+            ctx.beginPath();
+            ctx.roundRect(badgeX, badgeY, 64, 24, 6);
+            ctx.fill();
+            ctx.fillStyle = isSelected ? '#0f172a' : '#f8fafc';
+            ctx.font = 'bold 12px -apple-system, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText(`Bild ${slot.label}`, badgeX + 12, badgeY + 16);
+        }
+
+        ctx.restore();
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (!slots[0].img && !slots[1].img && !compareMode) return;
+
+        drawSlot(0);
+        if (compareMode) {
+            drawSlot(1);
+
+            // Vertikal skiljelinje mellan Bild A och Bild B
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 0);
+            ctx.lineTo(canvas.width / 2, canvas.height);
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        drawMagnifier();
+    }
+
+    function renderAnnotations(context, slot, currentScale, isExport = false, isMagnifier = false) {
+        const lineWidth = Math.max(3 / currentScale, isMagnifier ? 1 : 2);
+        const pointRadius = isMagnifier ? Math.max(4 / currentScale, 2) : Math.max(9 / currentScale, 5);
+        const fontSize = Math.max(16 / currentScale, 12);
+
+        if (slot.levelLine && !isExport) {
+            drawLine(context, slot.levelLine[0], slot.levelLine[1], '#a855f7', lineWidth, true);
+            drawPoint(context, slot.levelLine[0], '#a855f7', pointRadius, slot.levelLine[0] === draggingPoint, isMagnifier);
+            drawPoint(context, slot.levelLine[1], '#a855f7', pointRadius, slot.levelLine[1] === draggingPoint, isMagnifier);
+            if (!isMagnifier) {
+                const deg = ((slot.rotationRad * 180) / Math.PI).toFixed(1);
+                const midX = (slot.levelLine[0].x + slot.levelLine[1].x) / 2;
+                const midY = (slot.levelLine[0].y + slot.levelLine[1].y) / 2;
+                drawLabel(context, `Horisont (${deg}°)`, midX, midY - 14 / currentScale, '#a855f7', fontSize * 0.85, slot.rotationRad);
+            }
+        }
+
+        slot.jointAngles.forEach(item => {
             const color = item.side === 'left' ? '#3b82f6' : '#f97316';
             const [p1, p2, p3] = item.points;
             const angle = calculateThreePointAngle(p1, p2, p3);
@@ -642,44 +1116,48 @@
             drawLine(context, p1, p2, color, lineWidth);
             drawLine(context, p2, p3, color, lineWidth);
 
-            drawPoint(context, p1, color, pointRadius);
-            drawPoint(context, p2, '#eab308', pointRadius * 1.15);
-            drawPoint(context, p3, color, pointRadius);
+            drawPoint(context, p1, color, pointRadius, p1 === draggingPoint, isMagnifier);
+            drawPoint(context, p2, '#eab308', pointRadius * 1.15, p2 === draggingPoint, isMagnifier);
+            drawPoint(context, p3, color, pointRadius, p3 === draggingPoint, isMagnifier);
 
-            drawLabel(context, `${angle.toFixed(1)}°`, p2.x + 12 / currentScale, p2.y - 12 / currentScale, color, fontSize);
-        });
-
-        // Rita Mittlinje
-        if (midline) {
-            drawLine(context, midline[0], midline[1], '#10b981', lineWidth, true);
-            drawPoint(context, midline[0], '#10b981', pointRadius);
-            drawPoint(context, midline[1], '#10b981', pointRadius);
-            drawLabel(context, "Mittlinje", midline[0].x + 10 / currentScale, midline[0].y, '#10b981', fontSize * 0.85);
-        }
-
-        // Rita benlinjer relativt mittlinjen
-        midlineLegs.forEach(leg => {
-            const color = leg.side === 'left' ? '#3b82f6' : '#f97316';
-            const [p1, p2] = leg.points;
-            drawLine(context, p1, p2, color, lineWidth);
-            drawPoint(context, p1, color, pointRadius);
-            drawPoint(context, p2, color, pointRadius);
-
-            if (midline) {
-                const angle = calculateAngleBetweenLines(midline, leg.points);
-                const midX = (p1.x + p2.x) / 2;
-                const midY = (p1.y + p2.y) / 2;
-                drawLabel(context, `${angle.toFixed(1)}°`, midX + 10 / currentScale, midY, color, fontSize);
+            if (!isMagnifier) {
+                drawLabel(context, `${angle.toFixed(1)}°`, p2.x + 14 / currentScale, p2.y - 14 / currentScale, color, fontSize, slot.rotationRad);
             }
         });
 
-        // Rita pågående punkter
-        if (currentPoints.length > 0) {
-            const activeColor = (mode === 'midline' && !midline) ? '#10b981' : (currentSide === 'left' ? '#3b82f6' : '#f97316');
-            currentPoints.forEach((p, idx) => {
-                drawPoint(context, p, activeColor, pointRadius);
+        if (slot.midline) {
+            drawLine(context, slot.midline[0], slot.midline[1], '#10b981', lineWidth, true);
+            drawPoint(context, slot.midline[0], '#10b981', pointRadius, slot.midline[0] === draggingPoint, isMagnifier);
+            drawPoint(context, slot.midline[1], '#10b981', pointRadius, slot.midline[1] === draggingPoint, isMagnifier);
+            if (!isMagnifier) {
+                drawLabel(context, "Mittlinje", slot.midline[0].x + 12 / currentScale, slot.midline[0].y, '#10b981', fontSize * 0.85, slot.rotationRad);
+            }
+        }
+
+        slot.midlineLegs.forEach(leg => {
+            const color = leg.side === 'left' ? '#3b82f6' : '#f97316';
+            const [p1, p2] = leg.points;
+            drawLine(context, p1, p2, color, lineWidth);
+            drawPoint(context, p1, color, pointRadius, p1 === draggingPoint, isMagnifier);
+            drawPoint(context, p2, color, pointRadius, p2 === draggingPoint, isMagnifier);
+
+            if (slot.midline && !isMagnifier) {
+                const angle = calculateAngleBetweenLines(slot.midline, leg.points);
+                const midX = (p1.x + p2.x) / 2;
+                const midY = (p1.y + p2.y) / 2;
+                drawLabel(context, `${angle.toFixed(1)}°`, midX + 12 / currentScale, midY, color, fontSize, slot.rotationRad);
+            }
+        });
+
+        if (slot.currentPoints.length > 0) {
+            let activeColor = currentSide === 'left' ? '#3b82f6' : '#f97316';
+            if (mode === 'level') activeColor = '#a855f7';
+            else if (mode === 'midline' && !slot.midline) activeColor = '#10b981';
+
+            slot.currentPoints.forEach((p, idx) => {
+                drawPoint(context, p, activeColor, pointRadius, p === draggingPoint, isMagnifier);
                 if (idx > 0) {
-                    drawLine(context, currentPoints[idx - 1], p, activeColor, lineWidth);
+                    drawLine(context, slot.currentPoints[idx - 1], p, activeColor, lineWidth);
                 }
             });
         }
@@ -698,20 +1176,30 @@
         context.restore();
     }
 
-    function drawPoint(context, p, color, radius) {
+    function drawPoint(context, p, color, radius, isDragging = false, isMagnifier = false) {
         context.save();
+        if (!isMagnifier) {
+            context.beginPath();
+            context.arc(p.x, p.y, isDragging ? radius * 2.4 : radius * 1.7, 0, Math.PI * 2);
+            context.fillStyle = isDragging ? 'rgba(56, 189, 248, 0.35)' : 'rgba(255, 255, 255, 0.18)';
+            context.fill();
+        }
+
         context.beginPath();
         context.arc(p.x, p.y, radius, 0, Math.PI * 2);
-        context.fillStyle = color;
+        context.fillStyle = isMagnifier && isDragging ? 'rgba(56, 189, 248, 0.4)' : color;
         context.fill();
-        context.lineWidth = radius * 0.35;
+        context.lineWidth = radius * 0.3;
         context.strokeStyle = '#ffffff';
         context.stroke();
         context.restore();
     }
 
-    function drawLabel(context, text, x, y, bgColor, fontSize) {
+    function drawLabel(context, text, x, y, bgColor, fontSize, rotRad = 0) {
         context.save();
+        context.translate(x, y);
+        context.rotate(-rotRad);
+
         context.font = `bold ${fontSize}px -apple-system, sans-serif`;
         const metrics = context.measureText(text);
         const padX = fontSize * 0.45;
@@ -719,9 +1207,9 @@
         const boxW = metrics.width + padX * 2;
         const boxH = fontSize + padY * 2;
 
-        context.fillStyle = 'rgba(15, 23, 42, 0.85)';
+        context.fillStyle = 'rgba(15, 23, 42, 0.88)';
         context.beginPath();
-        context.roundRect(x, y - boxH + padY, boxW, boxH, fontSize * 0.3);
+        context.roundRect(0, -boxH + padY, boxW, boxH, fontSize * 0.3);
         context.fill();
 
         context.strokeStyle = bgColor;
@@ -729,53 +1217,75 @@
         context.stroke();
 
         context.fillStyle = '#ffffff';
-        context.fillText(text, x + padX, y);
+        context.fillText(text, padX, 0);
         context.restore();
     }
 
-    // Uppdatera resultattabellen längst ner
     function updateResults() {
         let html = '';
         let leftAngles = [];
         let rightAngles = [];
+        let slotAngles = [[], []];
 
-        jointAngles.forEach((item, idx) => {
-            const angle = calculateThreePointAngle(item.points[0], item.points[1], item.points[2]);
-            const isLeft = item.side === 'left';
-            if (isLeft) leftAngles.push(angle);
-            else rightAngles.push(angle);
+        const activeSlots = compareMode ? [slots[0], slots[1]] : [slots[0]];
 
-            html += `
-                <div class="result-card">
-                    <div>
-                        <span class="badge" style="background:${isLeft ? 'var(--left-color)' : 'var(--right-color)'}"></span>
-                        ${isLeft ? 'Vänster' : 'Höger'} led #${idx + 1}
-                    </div>
-                    <div class="angle-val">${angle.toFixed(1)}°</div>
-                </div>
-            `;
-        });
+        activeSlots.forEach((slot, sIdx) => {
+            const tag = compareMode ? `<span class="slot-tag">Bild ${slot.label}</span>` : '';
 
-        if (midline) {
-            midlineLegs.forEach((leg, idx) => {
-                const angle = calculateAngleBetweenLines(midline, leg.points);
-                const isLeft = leg.side === 'left';
+            slot.jointAngles.forEach((item, idx) => {
+                const angle = calculateThreePointAngle(item.points[0], item.points[1], item.points[2]);
+                const isLeft = item.side === 'left';
                 if (isLeft) leftAngles.push(angle);
                 else rightAngles.push(angle);
+                slotAngles[sIdx].push(angle);
 
                 html += `
                     <div class="result-card">
                         <div>
-                            <span class="badge" style="background:${isLeft ? 'var(--left-color)' : 'var(--right-color)'}"></span>
-                            ${isLeft ? 'Vänster' : 'Höger'} mot mittlinje #${idx + 1}
+                            ${tag}<span class="badge" style="background:${isLeft ? 'var(--left-color)' : 'var(--right-color)'}"></span>
+                            ${isLeft ? 'Vänster' : 'Höger'} led #${idx + 1}
                         </div>
                         <div class="angle-val">${angle.toFixed(1)}°</div>
                     </div>
                 `;
             });
+
+            if (slot.midline) {
+                slot.midlineLegs.forEach((leg, idx) => {
+                    const angle = calculateAngleBetweenLines(slot.midline, leg.points);
+                    const isLeft = leg.side === 'left';
+                    if (isLeft) leftAngles.push(angle);
+                    else rightAngles.push(angle);
+                    slotAngles[sIdx].push(angle);
+
+                    html += `
+                        <div class="result-card">
+                            <div>
+                                ${tag}<span class="badge" style="background:${isLeft ? 'var(--left-color)' : 'var(--right-color)'}"></span>
+                                ${isLeft ? 'Vänster' : 'Höger'} mot mittlinje #${idx + 1}
+                            </div>
+                            <div class="angle-val">${angle.toFixed(1)}°</div>
+                        </div>
+                    `;
+                });
+            }
+        });
+
+        // Jämförelse mellan Bild A och Bild B i jämförelseläget
+        if (compareMode && slotAngles[0].length > 0 && slotAngles[1].length > 0) {
+            const valA = slotAngles[0][slotAngles[0].length - 1];
+            const valB = slotAngles[1][slotAngles[1].length - 1];
+            const diffAB = valB - valA;
+            const sign = diffAB > 0 ? '+' : '';
+            html += `
+                <div class="result-card diff-card">
+                    <div><strong>Δ Bild B vs A</strong><br><small style="color:var(--text-muted)">${valA.toFixed(1)}° → ${valB.toFixed(1)}°</small></div>
+                    <div class="angle-val" style="color:var(--accent)">${sign}${diffAB.toFixed(1)}°</div>
+                </div>
+            `;
         }
 
-        // Beräkna asymmetri om både vänster och höger finns uppmätta
+        // Jämförelse mellan Vänster och Höger sida
         if (leftAngles.length > 0 && rightAngles.length > 0) {
             const latestLeft = leftAngles[leftAngles.length - 1];
             const latestRight = rightAngles[rightAngles.length - 1];
@@ -784,7 +1294,7 @@
 
             html += `
                 <div class="result-card diff-card">
-                    <div><strong>Δ Skillnad (V vs H)</strong><br><small style="color:var(--text-muted)">${dominant}</small></div>
+                    <div><strong>Δ Vänster vs Höger</strong><br><small style="color:var(--text-muted)">${dominant}</small></div>
                     <div class="angle-val" style="color:var(--accent)">${diff.toFixed(1)}°</div>
                 </div>
             `;
